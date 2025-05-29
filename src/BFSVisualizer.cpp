@@ -97,6 +97,11 @@ void BFSVisualizer::update(float deltaTime) {
 }
 
 void BFSVisualizer::updateNodeStates() {
+  // Only update states that have actually changed
+  static std::unordered_set<int> lastVisited;
+  static std::queue<int> lastQueue;
+  static int lastCurrent = -1;
+
   // Reset all nodes to unvisited
   for (const auto &[id, node] : m_graph.getNodes()) {
     node->setState(NodeState::UNVISITED);
