@@ -81,7 +81,7 @@ void Application::handleKeyPressed(sf::Keyboard::Key key) {
     break;
 
   case sf::Keyboard::Key::A:
-    // m_visualizer->setAutoStep(!m_visualizer->getState());
+    m_visualizer->setAutoStep(!m_visualizer->isAutoStepping());
     break;
 
   case sf::Keyboard::Key::G:
