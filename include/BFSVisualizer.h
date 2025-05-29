@@ -24,6 +24,7 @@ public:
   const std::queue<int> &getQueue() const { return m_queue; }
   const std::vector<int> &getVisitOrder() const { return m_visitOrder; }
   int getCurrentNode() const { return m_currentNode; }
+  bool isAutoStepping() const { return m_autoStep; }
 
   // Auto-stepping
   void setAutoStep(bool enable) { m_autoStep = enable; }
