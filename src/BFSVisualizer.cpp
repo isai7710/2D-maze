@@ -149,7 +149,7 @@ void BFSVisualizer::drawQueue(sf::RenderWindow &window, sf::Font &font) const {
   // Title
   sf::Text title(font);
   title.setString("Queue:");
-  title.setCharacterSize(16);
+  title.setCharacterSize(30);
   title.setPosition({startX, startY});
   title.setFillColor(sf::Color::Black);
   window.draw(title);
@@ -157,7 +157,7 @@ void BFSVisualizer::drawQueue(sf::RenderWindow &window, sf::Font &font) const {
   // Queue visualization
   std::queue<int> tempQueue = m_queue;
   float x = startX;
-  float y = startY + 25.0f;
+  float y = startY + 45.0f;
 
   while (!tempQueue.empty()) {
     // Draw box
@@ -171,10 +171,10 @@ void BFSVisualizer::drawQueue(sf::RenderWindow &window, sf::Font &font) const {
     // Draw number
     sf::Text number(font);
     number.setString(std::to_string(tempQueue.front()));
-    number.setCharacterSize(16);
+    number.setCharacterSize(24);
     sf::FloatRect bounds = number.getLocalBounds();
     number.setPosition({x + boxWidth / 2.0f - bounds.size.x / 2.0f,
-                        y + boxHeight / 2.0f - bounds.size.y / 2.0f - 2.0f});
+                        y + boxHeight / 2.0f - bounds.size.y / 2.0f - 6.0f});
     number.setFillColor(sf::Color::Black);
     window.draw(number);
 
@@ -185,8 +185,8 @@ void BFSVisualizer::drawQueue(sf::RenderWindow &window, sf::Font &font) const {
 
 void BFSVisualizer::drawInfo(sf::RenderWindow &window, sf::Font &font) const {
   const float startX = 20.0f;
-  const float startY = 80.0f;
-  const float lineHeight = 20.0f;
+  const float startY = 110.0f;
+  const float lineHeight = 30.0f;
 
   std::vector<std::string> info;
 
@@ -238,7 +238,7 @@ void BFSVisualizer::drawInfo(sf::RenderWindow &window, sf::Font &font) const {
   for (size_t i = 0; i < info.size(); ++i) {
     sf::Text text(font);
     text.setString(info[i]);
-    text.setCharacterSize(14);
+    text.setCharacterSize(24);
     text.setPosition({startX, startY + i * lineHeight});
     text.setFillColor(sf::Color::Black);
     window.draw(text);

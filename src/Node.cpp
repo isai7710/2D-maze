@@ -25,10 +25,10 @@ void Node::draw(sf::RenderWindow &window, sf::Font &font) const {
   // Draw node ID
   sf::Text text(font);
   text.setString(std::to_string(m_id));
-  text.setCharacterSize(16);
+  text.setCharacterSize(24);
   sf::FloatRect textBounds = text.getLocalBounds();
   text.setPosition({m_position.x - textBounds.size.x / 2.0f,
-                    m_position.y - textBounds.size.y / 2.0f - 2.0f});
+                    m_position.y - textBounds.size.y / 2.0f - 6.0f});
   text.setFillColor(sf::Color::Black);
   window.draw(text);
 }
