@@ -1,9 +1,10 @@
 #include "Application.h"
+#include "Config.h"
 #include <iostream>
 
 Application::Application()
-    : m_window(sf::VideoMode({1000, 800}), "BFS Visualizer",
-               sf::Style::Titlebar | sf::Style::Close) {
+    : m_window(sf::VideoMode({WINDOW_CONFIG::WIDTH, WINDOW_CONFIG::HEIGHT}),
+               WINDOW_CONFIG::TITLE, sf::Style::Titlebar | sf::Style::Close) {
   m_window.setFramerateLimit(60);
 
   if (!loadResources()) {

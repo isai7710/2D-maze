@@ -1,4 +1,5 @@
 #include "BFSVisualizer.h"
+#include "Config.h"
 #include <sstream>
 
 BFSVisualizer::BFSVisualizer(Graph &graph)
@@ -141,29 +142,29 @@ void BFSVisualizer::resetNodeStates() {
 }
 
 void BFSVisualizer::drawQueue(sf::RenderWindow &window, sf::Font &font) const {
-  const float startX = 20.0f;
-  const float startY = 20.0f;
-  const float boxWidth = 40.0f;
-  const float boxHeight = 30.0f;
+  const float startX = UI_CONFIG::UI_MARGIN;
+  const float startY = UI_CONFIG::UI_MARGIN;
+  const float boxWidth = UI_CONFIG::QUEUE_BOX_WIDTH;
+  const float boxHeight = UI_CONFIG::QUEUE_BOX_HEIGHT;
 
   // Title
   sf::Text title(font);
-  title.setString("Queue:");
-  title.setCharacterSize(30);
+  title.setString(UI_CONFIG::QUEUE_BOX_TITLE);
+  title.setCharacterSize(UI_CONFIG::TITLE_FONT_SIZE);
   title.setPosition({startX, startY});
-  title.setFillColor(sf::Color::Black);
+  title.setFillColor(COLOR_CONFIG::TEXT);
   window.draw(title);
 
   // Queue visualization
   std::queue<int> tempQueue = m_queue;
-  float x = startX;
-  float y = startY + 45.0f;
+  float x = startX + title.getLocalBounds().size.x + UI_CONFIG::UI_MARGIN;
+  float y = startY + title.getLocalBounds().size.y / 2.0f;
 
   while (!tempQueue.empty()) {
     // Draw box
     sf::RectangleShape box(sf::Vector2f(boxWidth, boxHeight));
     box.setPosition({x, y});
-    box.setFillColor(sf::Color::Yellow);
+    box.setFillColor(COLOR_CONFIG::QUEUE_BOX);
     box.setOutlineThickness(2.0f);
     box.setOutlineColor(sf::Color::Black);
     window.draw(box);
@@ -171,10 +172,10 @@ void BFSVisualizer::drawQueue(sf::RenderWindow &window, sf::Font &font) const {
     // Draw number
     sf::Text number(font);
     number.setString(std::to_string(tempQueue.front()));
-    number.setCharacterSize(24);
+    number.setCharacterSize(UI_CONFIG::QUEUE_BOX_FONT_SIZE);
     sf::FloatRect bounds = number.getLocalBounds();
     number.setPosition({x + boxWidth / 2.0f - bounds.size.x / 2.0f,
-                        y + boxHeight / 2.0f - bounds.size.y / 2.0f - 6.0f});
+                        y + boxHeight / 2.0f - bounds.size.y / 2.0f - 10.0f});
     number.setFillColor(sf::Color::Black);
     window.draw(number);
 
@@ -184,9 +185,9 @@ void BFSVisualizer::drawQueue(sf::RenderWindow &window, sf::Font &font) const {
 }
 
 void BFSVisualizer::drawInfo(sf::RenderWindow &window, sf::Font &font) const {
-  const float startX = 20.0f;
-  const float startY = 110.0f;
-  const float lineHeight = 30.0f;
+  const float startX = UI_CONFIG::UI_MARGIN;
+  const float startY = UI_CONFIG::INFO_BOX_START_Y;
+  const float lineHeight = UI_CONFIG::LINE_HEIGHT;
 
   std::vector<std::string> info;
 
@@ -216,7 +217,7 @@ void BFSVisualizer::drawInfo(sf::RenderWindow &window, sf::Font &font) const {
   // Visit order
   if (!m_visitOrder.empty()) {
     std::ostringstream oss;
-    oss << "Visit Order: ";
+    oss << "Visit Order: \n";
     for (size_t i = 0; i < m_visitOrder.size(); ++i) {
       if (i > 0)
         oss << " -> ";
@@ -226,6 +227,7 @@ void BFSVisualizer::drawInfo(sf::RenderWindow &window, sf::Font &font) const {
   }
 
   // Controls
+  info.push_back("");
   info.push_back("");
   info.push_back("Controls:");
   info.push_back("Space: Step / Start");
@@ -238,9 +240,9 @@ void BFSVisualizer::drawInfo(sf::RenderWindow &window, sf::Font &font) const {
   for (size_t i = 0; i < info.size(); ++i) {
     sf::Text text(font);
     text.setString(info[i]);
-    text.setCharacterSize(24);
+    text.setCharacterSize(UI_CONFIG::INFO_FONT_SIZE);
     text.setPosition({startX, startY + i * lineHeight});
-    text.setFillColor(sf::Color::Black);
+    text.setFillColor(COLOR_CONFIG::TEXT);
     window.draw(text);
   }
 }

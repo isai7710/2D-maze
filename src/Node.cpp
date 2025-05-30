@@ -1,7 +1,9 @@
 #include "Node.h"
+#include "Config.h"
 
 Node::Node(int id, sf::Vector2f position, float radius)
-    : m_id(id), m_position(position), m_radius(radius),
+    : m_id(id), m_position(position),
+      m_radius(radius > 0 ? radius : NODE_CONFIG::BASE_RADIUS),
       m_state(NodeState::UNVISITED) {}
 
 void Node::addNeighbor(int neighborId) {
@@ -18,18 +20,18 @@ void Node::draw(sf::RenderWindow &window, sf::Font &font) const {
   sf::CircleShape circle(m_radius);
   circle.setPosition({m_position.x - m_radius, m_position.y - m_radius});
   circle.setFillColor(getStateColor());
-  circle.setOutlineThickness(3.0f);
-  circle.setOutlineColor(sf::Color::Black);
+  circle.setOutlineThickness(NODE_CONFIG::OUTLINE_THICKNESS);
+  circle.setOutlineColor(COLOR_CONFIG::EDGE);
   window.draw(circle);
 
   // Draw node ID
   sf::Text text(font);
   text.setString(std::to_string(m_id));
-  text.setCharacterSize(24);
+  text.setCharacterSize(UI_CONFIG::NODE_FONT_SIZE);
   sf::FloatRect textBounds = text.getLocalBounds();
   text.setPosition({m_position.x - textBounds.size.x / 2.0f,
-                    m_position.y - textBounds.size.y / 2.0f - 6.0f});
-  text.setFillColor(sf::Color::Black);
+                    m_position.y - textBounds.size.y / 2.0f - 12.0f});
+  text.setFillColor(COLOR_CONFIG::TEXT);
   window.draw(text);
 }
 
@@ -42,14 +44,14 @@ bool Node::contains(sf::Vector2f point) const {
 sf::Color Node::getStateColor() const {
   switch (m_state) {
   case NodeState::UNVISITED:
-    return sf::Color::White;
+    return COLOR_CONFIG::UNVISITED;
   case NodeState::IN_QUEUE:
-    return sf::Color::Yellow;
+    return COLOR_CONFIG::IN_QUEUE;
   case NodeState::CURRENT:
-    return sf::Color::Red;
+    return COLOR_CONFIG::CURRENT;
   case NodeState::VISITED:
-    return sf::Color::Green;
+    return COLOR_CONFIG::VISITED;
   default:
-    return sf::Color::White;
+    return COLOR_CONFIG::UNVISITED;
   }
 }
