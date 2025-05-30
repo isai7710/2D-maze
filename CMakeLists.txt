@@ -24,6 +24,7 @@ set (HEADERS
   include/BFSVisualizer.h 
   include/Graph.h 
   include/Node.h
+  include/Config.h
 )
 
 # Add executable
