@@ -7,7 +7,7 @@ enum class NodeState { UNVISITED, VISITED, CURRENT, IN_QUEUE };
 
 class Node {
 public:
-  Node(int id, sf::Vector2f position, float radius = 25.0f);
+  Node(int id, sf::Vector2f position, float radius);
 
   // Getters
   int getId() const { return m_id; }
