@@ -1,13 +1,13 @@
 #include "Graph.h"
-#include <algorithm>
+#include "Config.h"
 #include <cmath>
-#include <limits>
+#include <iostream>
 #include <random>
 
 Graph::Graph() = default;
 
 void Graph::addNode(int id, sf::Vector2f position) {
-  m_nodes[id] = std::make_shared<Node>(id, position);
+  m_nodes[id] = std::make_shared<Node>(id, position, NODE_CONFIG::BASE_RADIUS);
 }
 
 void Graph::addEdge(int from, int to) {
@@ -87,74 +87,123 @@ void Graph::drawEdge(sf::RenderWindow &window, const Node &from,
 void Graph::generateSampleGraph() {
   clear();
 
-  // Initialize random number generator
+  // Initialize random number generators
   static std::random_device rd;
   static std::mt19937 gen(rd());
-  static std::uniform_int_distribution<int> nodeCountDist(6, 10);
+  static std::uniform_int_distribution<int> nodeCountDist(
+      ALGO_CONFIG::MIN_NODES, ALGO_CONFIG::MAX_NODES);
   static std::uniform_real_distribution<float> angleDist(0.0f, 2.0f * 3.14159f);
-  static std::uniform_real_distribution<float> radiusDist(80.0f, 180.0f);
+  static std::uniform_real_distribution<float> radiusDist(
+      GRAPH_CONFIG::getMinRadiusPlacement(),
+      GRAPH_CONFIG::getMaxRadiusPlacement());
   static std::uniform_real_distribution<float> edgeProbDist(0.0f, 1.0f);
   static std::uniform_int_distribution<int> connectDist(1, 3);
 
-  // Generate random number of nodes
-  int numNodes = nodeCountDist(gen);
-  const float centerX = 650.0f;
-  const float centerY = 400.0f;
-  const float minNodeDistance = 80.0f; // Minimum distance between nodes
-
-  // Generate nodes with collision avoidance
+  int targetNodes = nodeCountDist(gen);
   std::vector<sf::Vector2f> positions;
 
-  for (int i = 0; i < numNodes; ++i) {
-    sf::Vector2f newPos;
-    int attempts = 0;
-    bool validPosition = false;
-
-    while (!validPosition && attempts < 100) {
-      // Try circular/radial distribution for better spacing
-      if (i == 0) {
-        // First node at center
-        newPos = sf::Vector2f(centerX, centerY);
-      } else {
-        // Generate position in a ring around center with some randomness
-        float angle = angleDist(gen);
-        float radius = radiusDist(gen);
-        newPos.x = centerX + radius * std::cos(angle);
-        newPos.y = centerY + radius * std::sin(angle);
-
-        // Add some randomness to avoid perfect circles
-        newPos.x += (edgeProbDist(gen) - 0.5f) * 60.0f;
-        newPos.y += (edgeProbDist(gen) - 0.5f) * 60.0f;
-
-        // Keep within bounds
-        newPos.x = std::max(450.0f, std::min(850.0f, newPos.x));
-        newPos.y = std::max(120.0f, std::min(680.0f, newPos.y));
-      }
-
-      // Check if position is valid (not too close to existing nodes)
-      validPosition = true;
-      for (const auto &existingPos : positions) {
-        float distance = std::sqrt(std::pow(newPos.x - existingPos.x, 2) +
-                                   std::pow(newPos.y - existingPos.y, 2));
-        if (distance < minNodeDistance) {
-          validPosition = false;
-          break;
-        }
-      }
-      attempts++;
-    }
-
-    positions.push_back(newPos);
-    addNode(i, newPos);
+  if (GRAPH_CONFIG::DEBUG_PLACEMENT) {
+    std::cout << "Attempting to place " << targetNodes << " nodes\n";
   }
 
-  // Create a connected graph using a better algorithm
-  // Step 1: Create a spanning tree to ensure connectivity
-  std::vector<bool> connected(numNodes, false);
+  // Place nodes using hierarchical strategy
+  for (int i = 0; i < targetNodes; ++i) {
+    sf::Vector2f newPos;
+    bool positionFound = false;
+
+    if (i == 0) {
+      // First node always goes at center - guaranteed valid
+      newPos =
+          sf::Vector2f(GRAPH_CONFIG::getCenterX(), GRAPH_CONFIG::getCenterY());
+      positionFound = true;
+
+      if (GRAPH_CONFIG::DEBUG_PLACEMENT) {
+        std::cout << "Node " << i << ": Center position\n";
+      }
+    } else {
+      // Try hierarchical placement strategies
+      int totalAttempts = 0;
+
+      // STRATEGY 1: Ring Placement (most preferred)
+      for (int attempt = 0;
+           attempt < GRAPH_CONFIG::RING_PLACEMENT_ATTEMPTS && !positionFound;
+           ++attempt) {
+        newPos = generateRingPosition(gen, angleDist, radiusDist, edgeProbDist);
+        if (isValidPosition(newPos, positions)) {
+          positionFound = true;
+          if (GRAPH_CONFIG::DEBUG_PLACEMENT) {
+            std::cout << "Node " << i << ": Ring placement (attempt "
+                      << attempt + 1 << ")\n";
+          }
+        }
+        totalAttempts++;
+      }
+
+      // STRATEGY 2: Grid Placement (fallback)
+      for (int attempt = 0;
+           attempt < GRAPH_CONFIG::GRID_PLACEMENT_ATTEMPTS && !positionFound;
+           ++attempt) {
+        newPos = generateGridPosition(i, targetNodes, edgeProbDist, gen);
+        if (isValidPosition(newPos, positions)) {
+          positionFound = true;
+          if (GRAPH_CONFIG::DEBUG_PLACEMENT) {
+            std::cout << "Node " << i << ": Grid placement (attempt "
+                      << attempt + 1 << ")\n";
+          }
+        }
+        totalAttempts++;
+      }
+
+      // STRATEGY 3: Random Placement (desperate)
+      for (int attempt = 0;
+           attempt < GRAPH_CONFIG::RANDOM_PLACEMENT_ATTEMPTS && !positionFound;
+           ++attempt) {
+        newPos = generateRandomPosition(gen);
+        if (isValidPosition(newPos, positions)) {
+          positionFound = true;
+          if (GRAPH_CONFIG::DEBUG_PLACEMENT) {
+            std::cout << "Node " << i << ": Random placement (attempt "
+                      << attempt + 1 << ")\n";
+          }
+        }
+        totalAttempts++;
+      }
+
+      if (GRAPH_CONFIG::DEBUG_PLACEMENT && totalAttempts > 50) {
+        std::cout << "Node " << i << " required " << totalAttempts
+                  << " attempts\n";
+      }
+    }
+
+    // Add node if position found, otherwise reduce graph size
+    if (positionFound) {
+      positions.push_back(newPos);
+      addNode(i, newPos);
+    } else {
+      if (GRAPH_CONFIG::DEBUG_PLACEMENT) {
+        std::cout << "Failed to place node " << i << ". Reducing graph to " << i
+                  << " nodes.\n";
+      }
+      targetNodes = i; // Reduce target to successfully placed nodes
+      break;
+    }
+  }
+
+  // Update numNodes to actual placed count
+  int actualNodes = static_cast<int>(positions.size());
+
+  if (GRAPH_CONFIG::DEBUG_PLACEMENT) {
+    std::cout << "Successfully placed " << actualNodes << " nodes\n";
+  }
+
+  // === CONNECTIVITY PHASE (improved but same logic) ===
+
+  // Step 1: Create spanning tree to ensure connectivity
+  std::vector<bool> connected(actualNodes, false);
   connected[0] = true;
 
-  for (int i = 1; i < numNodes; ++i) {
-    // Find closest connected node to current unconnected node
+  for (int i = 1; i < actualNodes; ++i) {
+    // Find closest connected node
     int bestTarget = -1;
     float minDistance = std::numeric_limits<float>::max();
 
@@ -176,14 +225,13 @@ void Graph::generateSampleGraph() {
     }
   }
 
-  // Step 2: Add additional random edges for more interesting structure
-  for (int i = 0; i < numNodes; ++i) {
-    // Each node gets 1-3 additional connection attempts
+  // Step 2: Add additional edges for interesting structure
+  for (int i = 0; i < actualNodes; ++i) {
     int extraConnections = connectDist(gen);
 
     for (int attempt = 0; attempt < extraConnections; ++attempt) {
-      for (int j = i + 1; j < numNodes; ++j) {
-        // Skip if already connected
+      for (int j = i + 1; j < actualNodes; ++j) {
+        // Check if already connected
         auto nodeI = getNode(i);
         bool alreadyConnected = false;
         if (nodeI) {
@@ -200,15 +248,97 @@ void Graph::generateSampleGraph() {
               std::sqrt(std::pow(positions[i].x - positions[j].x, 2) +
                         std::pow(positions[i].y - positions[j].y, 2));
 
-          // Probability based on distance - closer nodes more likely to connect
-          float probability = std::max(0.05f, 0.5f - (distance / 400.0f));
+          // Distance-based probability with better scaling
+          float maxConnectDistance =
+              GRAPH_CONFIG::getMaxRadiusPlacement() * 2.0f;
+          float probability =
+              std::max(0.05f, 0.6f - (distance / maxConnectDistance));
 
           if (edgeProbDist(gen) < probability) {
             addEdge(i, j);
-            break; // Only add one extra connection per attempt
+            break;
           }
         }
       }
     }
   }
+}
+
+sf::Vector2f Graph::generateRingPosition(
+    std::mt19937 &gen, std::uniform_real_distribution<float> &angleDist,
+    std::uniform_real_distribution<float> &radiusDist,
+    std::uniform_real_distribution<float> &edgeProbDist) const {
+  const float centerX = GRAPH_CONFIG::getCenterX();
+  const float centerY = GRAPH_CONFIG::getCenterY();
+
+  // Generate position in ring around center
+  float angle = angleDist(gen);
+  float radius = radiusDist(gen);
+
+  sf::Vector2f newPos;
+  newPos.x = centerX + radius * std::cos(angle);
+  newPos.y = centerY + radius * std::sin(angle);
+
+  // Add controlled random offset
+  float offsetRange = GRAPH_CONFIG::getRandomOffsetRange();
+  newPos.x += (edgeProbDist(gen) - 0.5f) * offsetRange;
+  newPos.y += (edgeProbDist(gen) - 0.5f) * offsetRange;
+
+  return clampToBounds(newPos);
+}
+
+sf::Vector2f
+Graph::generateGridPosition(int nodeIndex, int totalNodes,
+                            std::uniform_real_distribution<float> &edgeProbDist,
+                            std::mt19937 &gen) const {
+  // Calculate grid dimensions
+  int gridSize = static_cast<int>(std::ceil(std::sqrt(totalNodes))) + 1;
+  int gridX = (nodeIndex - 1) % gridSize; // -1 because node 0 is at center
+  int gridY = (nodeIndex - 1) / gridSize;
+
+  // Calculate grid position
+  float spacing = GRAPH_CONFIG::getGridSpacing();
+  sf::Vector2f newPos;
+  newPos.x = GRAPH_CONFIG::getLeftBoundary() + (gridX + 1) * spacing;
+  newPos.y = GRAPH_CONFIG::getTopBoundary() + (gridY + 1) * spacing;
+
+  // Add small jitter to avoid perfect alignment
+  float jitterRange = spacing * 0.2f; // 20% of spacing
+  newPos.x += (edgeProbDist(gen) - 0.5f) * jitterRange;
+  newPos.y += (edgeProbDist(gen) - 0.5f) * jitterRange;
+
+  return clampToBounds(newPos);
+}
+
+sf::Vector2f Graph::generateRandomPosition(std::mt19937 &gen) const {
+  std::uniform_real_distribution<float> xDist(GRAPH_CONFIG::getLeftBoundary(),
+                                              GRAPH_CONFIG::getRightBoundary());
+  std::uniform_real_distribution<float> yDist(
+      GRAPH_CONFIG::getTopBoundary(), GRAPH_CONFIG::getBottomBoundary());
+
+  return sf::Vector2f(xDist(gen), yDist(gen));
+}
+
+bool Graph::isValidPosition(
+    const sf::Vector2f &newPos,
+    const std::vector<sf::Vector2f> &existingPositions) const {
+  const float minDistance = GRAPH_CONFIG::getSafeMinDistance();
+
+  for (const auto &existingPos : existingPositions) {
+    float distance = std::sqrt(std::pow(newPos.x - existingPos.x, 2) +
+                               std::pow(newPos.y - existingPos.y, 2));
+    if (distance < minDistance) {
+      return false;
+    }
+  }
+  return true;
+}
+
+sf::Vector2f Graph::clampToBounds(const sf::Vector2f &position) const {
+  sf::Vector2f clamped = position;
+  clamped.x = std::max(GRAPH_CONFIG::getLeftBoundary(),
+                       std::min(GRAPH_CONFIG::getRightBoundary(), clamped.x));
+  clamped.y = std::max(GRAPH_CONFIG::getTopBoundary(),
+                       std::min(GRAPH_CONFIG::getBottomBoundary(), clamped.y));
+  return clamped;
 }
