@@ -38,17 +38,13 @@ private:
       std::mt19937 &gen, std::uniform_real_distribution<float> &angleDist,
       std::uniform_real_distribution<float> &radiusDist,
       std::uniform_real_distribution<float> &edgeProbDist) const;
-
   sf::Vector2f
   generateGridPosition(int nodeIndex, int totalNodes,
                        std::uniform_real_distribution<float> &edgeProbDist,
                        std::mt19937 &gen) const;
-
   sf::Vector2f generateRandomPosition(std::mt19937 &gen) const;
-
   bool
   isValidPosition(const sf::Vector2f &newPos,
                   const std::vector<sf::Vector2f> &existingPositions) const;
-
   sf::Vector2f clampToBounds(const sf::Vector2f &position) const;
 };

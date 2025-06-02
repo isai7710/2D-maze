@@ -67,8 +67,8 @@ void Graph::drawEdge(sf::RenderWindow &window, const Node &from,
     direction /= length;
 
     // Adjust positions to start/end at circle edges
-    sf::Vector2f startPos = fromPos + direction * 25.0f;
-    sf::Vector2f endPos = toPos - direction * 25.0f;
+    sf::Vector2f startPos = fromPos + direction * NODE_CONFIG::BASE_RADIUS;
+    sf::Vector2f endPos = toPos - direction * NODE_CONFIG::BASE_RADIUS;
 
     // Create line using rectangle
     sf::RectangleShape line;
